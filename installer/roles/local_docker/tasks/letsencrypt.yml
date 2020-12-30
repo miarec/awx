@@ -1,0 +1,30 @@
+- name: Ensure python OpenSSL dependencies are installed
+  pip:
+    name: pyOpenSSL
+    state: present
+
+- name: Ensure directory exists for local self-signed TLS certs.
+  file:
+    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}"
+    state: directory
+
+- name: Generate an OpenSSL private key.
+  openssl_privatekey:
+    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
+
+- name: Generate an OpenSSL CSR.
+  openssl_csr:
+    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/cert.csr"
+    privatekey_path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
+    common_name: "{{ awx_web_hostname }}"
+
+- name: Generate a Self Signed OpenSSL certificate.
+  openssl_certificate:
+    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/fullchain.pem"
+    privatekey_path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
+    csr_path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/cert.csr"
+    provider: selfsigned
+
+- set_fact:
+    ssl_certificate: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/fullchain.pem"
+    ssl_certificate_key: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"

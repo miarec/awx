@@ -70,6 +70,10 @@ host_port_ssl=443
 #ssl_certificate_key=
 docker_compose_dir="~/.awx/awxcompose"
 
+# Generate Let's Encrypt SSL certificates for awx_web_hostname
+# letsencrypt_generate_cert=True
+letsencrypt_cert_dir=/etc/letsencrypt/live
+
 # Required for Openshift when building the image on your own
 # Optional for Openshift if using Dockerhub or another prebuilt registry
 # Required for Docker Compose Install if building the image on your own
