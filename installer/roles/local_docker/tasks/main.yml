@@ -13,6 +13,7 @@
 
 - import_tasks: letsencrypt.yml
   when: 
+    - letsencrypt_generate_cert is defined
     - letsencrypt_generate_cert|bool
 
 - import_tasks: set_image.yml

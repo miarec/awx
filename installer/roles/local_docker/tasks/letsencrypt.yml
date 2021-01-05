@@ -3,28 +3,50 @@
     name: pyOpenSSL
     state: present
 
+- name: Ensure directory exists for letsencrypt
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ docker_compose_dir }}/letsencrypt/lib"
+    - "{{ docker_compose_dir }}/letsencrypt/www"
+    - "{{ docker_compose_dir }}/letsencrypt/etc"
+    - "{{ docker_compose_dir }}/letsencrypt/log"
+    - "{{ docker_compose_dir }}/letsencrypt/temp"
+    - "{{ docker_compose_dir }}/letsencrypt/live"
+
+
+- set_fact:
+    letsencrypt_temp_cert_dir: "{{ docker_compose_dir }}/letsencrypt/live/{{ awx_web_hostname }}"
+
 - name: Ensure directory exists for local self-signed TLS certs.
   file:
-    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}"
+    path: "{{ letsencrypt_temp_cert_dir }}"
     state: directory
 
 - name: Generate an OpenSSL private key.
   openssl_privatekey:
-    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
+    path: "{{ letsencrypt_temp_cert_dir }}/privkey.pem"
+  when:
+    - False
 
 - name: Generate an OpenSSL CSR.
   openssl_csr:
-    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/cert.csr"
-    privatekey_path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
+    path: "{{ letsencrypt_temp_cert_dir }}/cert.csr"
+    privatekey_path: "{{ letsencrypt_temp_cert_dir }}/privkey.pem"
     common_name: "{{ awx_web_hostname }}"
+  when:
+    - False
 
 - name: Generate a Self Signed OpenSSL certificate.
   openssl_certificate:
-    path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/fullchain.pem"
-    privatekey_path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
-    csr_path: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/cert.csr"
+    path: "{{ letsencrypt_temp_cert_dir }}/fullchain.pem"
+    privatekey_path: "{{ letsencrypt_temp_cert_dir }}/privkey.pem"
+    csr_path: "{{ letsencrypt_temp_cert_dir }}/cert.csr"
     provider: selfsigned
+  when:
+    - False
 
 - set_fact:
-    ssl_certificate: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/fullchain.pem"
-    ssl_certificate_key: "{{ letsencrypt_cert_dir }}/{{ awx_web_hostname }}/privkey.pem"
+    ssl_certificate: "{{ letsencrypt_temp_cert_dir }}/fullchain.pem"
+    ssl_certificate_key: "{{ letsencrypt_temp_cert_dir }}/privkey.pem"
