@@ -71,8 +71,52 @@ host_port_ssl=443
 docker_compose_dir="~/.awx/awxcompose"
 
 # Generate Let's Encrypt SSL certificates for awx_web_hostname
-# letsencrypt_generate_cert=True
-letsencrypt_cert_dir=/etc/letsencrypt/live
+# Instructions:
+#
+# Step 1. Generate temporary self-signed certificates
+#
+#   mkdir -p ~/.awx/temp_ssl
+#   chmod go-rx ~/.awx/temp_ssl
+#   openssl req -x509 -newkey rsa:4096 -keyout ~/.awx/temp_ssl/privkey.pem -out ~/.awx/temp_ssl/cert.pem -days 3650 -nodes -subj "/CN=\"$( hostname -f )\""
+#
+# Step 2. Uncomment the following lines in inventory file. 
+#
+# ssl_certificate=~/.awx/temp_ssl/cert.pem
+# ssl_certificate_key=~/.awx/temp_ssl/privkey.pem
+#
+# Step 3. Create directory for .well-known files:
+#
+#    mkdir -p ~/.awx/letsencrypt
+#
+# Step 4. Uncomment the following line in inventory file:
+#
+# letsencrypt_www_dir="~/.awx/letsencrypt"
+#
+# Step 5. Run installer playbook:
+#
+#    ansible-playbook -i inventory install.yml
+#
+# Step 6. Call Let's Encrypt certbot to generate final certificates:
+#
+#    sudo certbot certonly --webroot -w ~/.awx/letsencrypt/ -d $( hostname -f )
+#
+# Step 7. Change ssl_certificate/ssl_certificate_key to the following values:
+#
+# ssl_certificate=/etc/letsencrypt/live/<AWX_WEB_HOSTNAME>/fullchain.pem
+# ssl_certificate_key=/etc/letsencrypt/live/<AWX_WEB_HOSTNAME>/privkey.pem
+#
+# Step 8. Re-start docker container with new parameters:
+# 
+#    ansible-playbook -i inventory install.yml
+#
+# Step 9. Create cron task to automatically renew SSL certificates and restart AWX docker container:
+#         Add to /etc/crontab the following:
+#
+#    27 3 * * * root certbot renew --quiet --no-self-upgrade --post-hook "cd /root/.awx/awxcompose && docker-compose restart web"
+#
+# Step 10. Reload cron:
+#    service cron reload
+#
 
 # Required for Openshift when building the image on your own
 # Optional for Openshift if using Dockerhub or another prebuilt registry
